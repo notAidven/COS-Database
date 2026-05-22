@@ -902,16 +902,17 @@ function parseLine(line) {
 function parseCSV(text) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   const headers = parseLine(lines[0]).map(h => h.trim());
+  const validIdx = headers.map((h, i) => h ? i : -1).filter(i => i >= 0);
   return lines.slice(1).map(line => {
     const vals = parseLine(line);
     const obj = {};
-    headers.forEach((h, i) => obj[h] = (vals[i] || "").trim());
+    validIdx.forEach(i => obj[headers[i]] = (vals[i] || "").trim());
     return obj;
   });
 }
 
 // ── Fetch from Google Sheets
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/1VeQPCGUpRSZT-o6iPBNE8L36-SPQ3boUxLyfgYon2cA/export?format=csv&gid=1624531717";
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1VeQPCGUpRSZT-o6iPBNE8L36-SPQ3boUxLyfgYon2cA/gviz/tq?tqx=out:csv&gid=1624531717";
 
 fetch(SHEET_URL)
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
