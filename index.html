@@ -500,7 +500,6 @@
 <div class="header">
   <div class="header-title">
     <h1>Community-Owned Solar Database</h1>
-    <p>Source: NREL Sharing the Sun · Exportable 1.6.25</p>
   </div>
   <div class="header-stats">
     <div class="stat">
@@ -551,7 +550,7 @@
       <div class="chart-container"><canvas id="chart-structure"></canvas></div>
     </div>
     <div class="ov-section">
-      <div class="ov-section-title">Pivot — Structure × Utility Type</div>
+      <div class="ov-section-title">Ownership Models</div>
       <div style="overflow-x:auto"><table class="pivot-table" id="pivot-table"></table></div>
     </div>
   </div>
@@ -973,51 +972,53 @@ function buildOverview() {
     }
   });
 
-  // ── Pivot table: Basic Structure × Utility Type
+  // ── Ownership models table
   const structures = [...new Set(RAW.map(r => r['Basic Structure']).filter(Boolean))].sort();
-  const utilTypes  = [...new Set(RAW.map(r => r['Utility Type']).filter(Boolean))].sort();
+  const totalProjects = RAW.length;
+  const totalMWAll = RAW.reduce((s, r) => s + (parseFloat(r['System Size (MW-AC)']) || 0), 0);
 
-  const counts = {};
-  RAW.forEach(r => {
-    const s = r['Basic Structure'] || '', u = r['Utility Type'] || '';
-    if (!s || !u) return;
-    counts[s] = counts[s] || {};
-    counts[s][u] = (counts[s][u] || 0) + 1;
+  const ownershipRows = structures.map(st => {
+    const rows = RAW.filter(r => r['Basic Structure'] === st);
+    const count = rows.length;
+    const mwTotal = rows.reduce((s, r) => s + (parseFloat(r['System Size (MW-AC)']) || 0), 0);
+    const mwAvg = count ? mwTotal / count : 0;
+    const share = totalProjects ? (count / totalProjects) * 100 : 0;
+    return { st, count, mwTotal, mwAvg, share };
   });
-
-  const colTotals = {};
-  utilTypes.forEach(u => { colTotals[u] = structures.reduce((s, st) => s + ((counts[st] || {})[u] || 0), 0); });
-  const maxCell = Math.max(...structures.map(st => Math.max(...utilTypes.map(u => (counts[st] || {})[u] || 0))));
 
   const pivot = document.getElementById('pivot-table');
   pivot.innerHTML = `
     <thead>
       <tr>
-        <th>Structure \\ Utility Type</th>
-        ${utilTypes.map(u => `<th>${u}</th>`).join('')}
-        <th>Total</th>
+        <th style="text-align:left">Ownership Model</th>
+        <th>Projects</th>
+        <th>Total MW-AC</th>
+        <th>Avg MW-AC</th>
+        <th>Share</th>
       </tr>
     </thead>
     <tbody>
-      ${structures.map(st => {
-        const rowTotal = utilTypes.reduce((s, u) => s + ((counts[st] || {})[u] || 0), 0);
-        return `<tr>
+      ${ownershipRows.map(({ st, count, mwTotal, mwAvg, share }) => `
+        <tr>
           <td><span class="badge ${badgeClass(st)}">${badgeLabel(st)}</span></td>
-          ${utilTypes.map(u => {
-            const v = (counts[st] || {})[u] || 0;
-            const cls = v === 0 ? 'zero' : (v === maxCell ? 'hot' : '');
-            return `<td class="${cls}">${v || '—'}</td>`;
-          }).join('')}
-          <td style="color:var(--accent2);font-weight:600">${rowTotal}</td>
-        </tr>`;
-      }).join('')}
+          <td class="${count === Math.max(...ownershipRows.map(r => r.count)) ? 'hot' : ''}">${count}</td>
+          <td>${mwTotal.toFixed(1)}</td>
+          <td>${mwAvg.toFixed(2)}</td>
+          <td style="color:var(--text-muted)">${share.toFixed(1)}%</td>
+        </tr>`).join('')}
       <tr>
         <td>Total</td>
-        ${utilTypes.map(u => `<td>${colTotals[u]}</td>`).join('')}
-        <td>${RAW.length}</td>
+        <td>${totalProjects}</td>
+        <td>${totalMWAll.toFixed(1)}</td>
+        <td>${(totalMWAll / totalProjects).toFixed(2)}</td>
+        <td>100%</td>
       </tr>
     </tbody>`;
 }
 </script>
+
+<footer style="padding:16px 32px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim)">
+  Source: NREL Sharing the Sun
+</footer>
 </body>
 </html>
