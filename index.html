@@ -722,7 +722,7 @@ function renderTable() {
             <span class="mw-val">${mw.toFixed(2)}</span>
           </div>
         </td>
-        <td class="dimmed">${parseFloat(r['System Size (MW-DC)']).toFixed(2) || '—'}</td>
+        <td class="dimmed">${isNaN(parseFloat(r['System Size (MW-DC)'])) ? '—' : parseFloat(r['System Size (MW-DC)']).toFixed(2)}</td>
         <td class="mono" style="color:var(--text-muted)">${yr}</td>
         <td class="dimmed">${r['UtilityID'] || '—'}</td>
       </tr>`;
@@ -1017,8 +1017,9 @@ function buildOverview() {
 }
 </script>
 
-<footer style="padding:16px 32px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim)">
-  Source: NREL Sharing the Sun
+<footer style="padding:16px 32px;border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);display:flex;flex-direction:column;gap:8px">
+  <a href="https://data.nlr.gov/submissions/244" target="_blank" style="color:var(--text-dim);text-decoration:underline">Source: NREL's Sharing the Sun Database as of June 2025</a>
+  <span>Notice a missing project or an error? Contact us at <a href="mailto:renewable-energy@mit.edu" style="color:var(--text-muted);text-decoration:underline">renewable-energy@mit.edu</a></span>
 </footer>
 </body>
 </html>
