@@ -11,6 +11,9 @@
 
     html, body { height: auto; }
 
+    /* Height of the scrolling project list on the Database tab. */
+    :root { --db-list-height: 640px; }
+
     :root {
       --bg: #ffffff;
       --surface: #f4f9f4;
@@ -145,13 +148,31 @@
     }
     .result-count span { color: var(--accent); }
 
+    .btn-home {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid var(--border-light);
+      color: var(--text-muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-home:hover { border-color: var(--accent); color: var(--accent); }
+
     /* ── Table wrapper ── */
     .table-wrap {
       overflow-x: auto;
-      /* Let the embed grow with the database instead of creating a second
-         vertical scroll area inside the iframe. */
-      overflow-y: visible;
-      max-height: none;
+      /* The embed box has a fixed height, so the long project list scrolls
+         inside its own area. This keeps the Database tab about as tall as the
+         Overview tab (no white space under either). */
+      overflow-y: auto;
+      max-height: var(--db-list-height);
     }
 
     table {
@@ -399,6 +420,8 @@
       padding: 20px 28px;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
+      overflow-y: auto;
+      max-height: var(--db-list-height);
     }
     .card-grid.active { display: grid; }
 
@@ -501,6 +524,7 @@
 <body>
 
 <div class="header">
+  <a class="btn-home" href="https://renewable-energy.mit.edu/community-owned-solar" target="_top">&larr; COS Homepage</a>
   <div class="header-title">
     <h1>Community-Owned Solar Database</h1>
   </div>
