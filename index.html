@@ -9,6 +9,8 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { height: auto; }
+
     :root {
       --bg: #ffffff;
       --surface: #f4f9f4;
@@ -146,8 +148,10 @@
     /* ── Table wrapper ── */
     .table-wrap {
       overflow-x: auto;
-      overflow-y: auto;
-      max-height: calc(100vh - 200px);
+      /* Let the embed grow with the database instead of creating a second
+         vertical scroll area inside the iframe. */
+      overflow-y: visible;
+      max-height: none;
     }
 
     table {
