@@ -893,27 +893,35 @@ function resetFilters() {
 });
 
 // ── CSV parser
-function parseLine(line) {
-  const result = []; let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-    else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
-    else cur += ch;
+// Reads the whole export at once so a quoted cell can contain a line break
+// (e.g. Walton III's address, Co-op Solar's city) without splitting its row.
+function parseRows(text) {
+  const rows = []; let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i+1] === '\n') i++;
+      row.push(cur); rows.push(row); row = []; cur = '';
+    } else cur += ch;
   }
-  result.push(cur);
-  return result;
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(v => v.trim()));
 }
 function parseCSV(text) {
-  const lines = text.split(/\r?\n/).filter(l => l.trim());
-  const headers = parseLine(lines[0]).map(h => h.trim());
+  const rows = parseRows(text);
+  const headers = rows[0].map(h => h.trim());
   const validIdx = headers.map((h, i) => h ? i : -1).filter(i => i >= 0);
-  return lines.slice(1).map(line => {
-    const vals = parseLine(line);
+  return rows.slice(1).map(vals => {
     const obj = {};
-    validIdx.forEach(i => { obj[headers[i]] = (vals[i] || '').trim(); });
+    // Line breaks inside a cell become a single space.
+    validIdx.forEach(i => { obj[headers[i]] = (vals[i] || '').replace(/\s+/g, ' ').trim(); });
     return obj;
-  });
+  }).filter(r => r['Project Name']);
 }
 
 // ── Fetch from Google Sheets
@@ -922,14 +930,7 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1LWpPWExW7RL7BiKIKb-MY
 fetch(SHEET_URL)
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(csv => {
-    // Drop junk rows left over when a sheet cell contains a line break
-    // (e.g. "Georgia,Walton Electric Member Corp,..." or "Perryville"):
-    // they have no city and no state, or a State that isn't a 2-letter code.
-    RAW = parseCSV(csv).filter(r => {
-      const st = (r['State'] || '').trim(), city = (r['City'] || '').trim();
-      if (!st && !city) return false;
-      return !st || /^[A-Z]{2}$/.test(st);
-    });
+    RAW = parseCSV(csv);
     MAX_MW = Math.max(...RAW.map(r => parseFloat(r['System Size (MW-AC)']) || 0));
     data = [...RAW];
     document.getElementById('loading').style.display = 'none';
