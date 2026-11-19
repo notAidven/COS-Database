@@ -922,7 +922,9 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1LWpPWExW7RL7BiKIKb-MY
 fetch(SHEET_URL)
   .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
   .then(csv => {
-    RAW = parseCSV(csv);
+    // Drop the junk row left over from Walton III's line-broken address cell
+    // ("Georgia,Walton Electric Member Corp,..."): it has no city and no state.
+    RAW = parseCSV(csv).filter(r => (r['City'] || '').trim() || (r['State'] || '').trim());
     MAX_MW = Math.max(...RAW.map(r => parseFloat(r['System Size (MW-AC)']) || 0));
     data = [...RAW];
     document.getElementById('loading').style.display = 'none';
